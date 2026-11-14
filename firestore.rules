@@ -1,0 +1,331 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidProfileId(id) {
+      return id is string && id.size() >= 5 && id.size() <= 32 && id.matches('^HC-[A-Z0-9]{6,16}$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'sathvikpaneyadka@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidLang(lang) {
+      return lang is string && lang.size() == 2 && lang in ['en', 'hi', 'es', 'ta'];
+    }
+
+    function isValidPublicProfile(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'preferredLang', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'preferredLang', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.uid == request.auth.uid
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
+        && isValidLang(data.preferredLang)
+        && data.updatedAt == request.time;
+    }
+
+    function isValidPrivateInfo(data) {
+      return data.keys().hasAll(['uid', 'email', 'uniqueProfileId', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'phone', 'uniqueProfileId', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.uid == request.auth.uid
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
+        && (!('phone' in data) || (data.phone is string && data.phone.size() >= 4 && data.phone.size() <= 32))
+        && isValidProfileId(data.uniqueProfileId)
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidPatientProfile(data) {
+      return data.keys().hasAll(['profileId', 'ownerUid', 'language', 'verificationMode', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['profileId', 'ownerUid', 'language', 'verificationMode', 'allergies', 'chronicNotes', 'createdAt', 'updatedAt'])
+        && isValidProfileId(data.profileId)
+        && isValidId(data.ownerUid)
+        && data.ownerUid == request.auth.uid
+        && isValidLang(data.language)
+        && data.verificationMode is string && data.verificationMode.size() <= 32 && data.verificationMode in ['otp', 'keypad_pin', 'unverified']
+        && (!('allergies' in data) || (data.allergies is string && data.allergies.size() <= 400))
+        && (!('chronicNotes' in data) || (data.chronicNotes is string && data.chronicNotes.size() <= 800))
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidQueueTicket(data) {
+      return data.keys().hasAll(['ticketId', 'ownerUid', 'profileId', 'clinicName', 'roomLocation', 'scheduledTime', 'verificationMethod', 'status', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ticketId', 'ownerUid', 'profileId', 'clinicName', 'roomLocation', 'scheduledTime', 'verificationMethod', 'status', 'createdAt', 'updatedAt'])
+        && isValidId(data.ticketId)
+        && isValidId(data.ownerUid)
+        && isValidProfileId(data.profileId)
+        && data.clinicName is string && data.clinicName.size() >= 2 && data.clinicName.size() <= 160
+        && data.roomLocation is string && data.roomLocation.size() >= 2 && data.roomLocation.size() <= 120
+        && data.scheduledTime is string && data.scheduledTime.size() >= 4 && data.scheduledTime.size() <= 64
+        && data.verificationMethod is string && data.verificationMethod.size() <= 32 && data.verificationMethod in ['photo_match', 'keypad_token']
+        && data.status is string && data.status.size() <= 32 && data.status in ['waiting', 'notified', 'in_room', 'completed', 'cancelled']
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidLiveDispatch(data) {
+      return data.keys().hasAll(['dispatchId', 'ownerUid', 'kind', 'assigneeName', 'lat', 'lng', 'etaMinutes', 'status', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['dispatchId', 'ownerUid', 'kind', 'assigneeName', 'lat', 'lng', 'etaMinutes', 'status', 'createdAt', 'updatedAt'])
+        && isValidId(data.dispatchId)
+        && isValidId(data.ownerUid)
+        && data.kind is string && data.kind.size() <= 32 && data.kind in ['nurse_visit', 'supply_order']
+        && data.assigneeName is string && data.assigneeName.size() >= 2 && data.assigneeName.size() <= 120
+        && data.lat is number && data.lat >= -90 && data.lat <= 90
+        && data.lng is number && data.lng >= -180 && data.lng <= 180
+        && data.etaMinutes is int && data.etaMinutes >= 0 && data.etaMinutes <= 1440
+        && data.status is string && data.status.size() <= 32 && data.status in ['dispatched', 'en_route', 'arrived', 'completed']
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidComplaintEscalation(data) {
+      return data.keys().hasAll(['escalationId', 'ownerUid', 'channel', 'summary', 'status', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['escalationId', 'ownerUid', 'channel', 'summary', 'status', 'createdAt', 'updatedAt'])
+        && isValidId(data.escalationId)
+        && isValidId(data.ownerUid)
+        && data.channel is string && data.channel.size() <= 16 && data.channel in ['sms', 'ivr', 'web']
+        && data.summary is string && data.summary.size() >= 3 && data.summary.size() <= 500
+        && data.status is string && data.status.size() <= 32 && data.status in ['escalated', 'acknowledged', 'resolved']
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidSupplyAlert(data) {
+      return data.keys().hasAll(['alertId', 'ownerUid', 'sku', 'productName', 'supplierName', 'stockQty', 'reorderThreshold', 'criticalThreshold', 'severity', 'status', 'triggeredBy', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['alertId', 'ownerUid', 'sku', 'productName', 'supplierName', 'stockQty', 'reorderThreshold', 'criticalThreshold', 'severity', 'status', 'triggeredBy', 'createdAt', 'updatedAt'])
+        && isValidId(data.alertId)
+        && isValidId(data.ownerUid)
+        && data.sku is string && data.sku.size() >= 2 && data.sku.size() <= 32
+        && data.productName is string && data.productName.size() >= 2 && data.productName.size() <= 140
+        && data.supplierName is string && data.supplierName.size() >= 2 && data.supplierName.size() <= 120
+        && data.stockQty is int && data.stockQty >= 0 && data.stockQty <= 1000000
+        && data.reorderThreshold is int && data.reorderThreshold >= 1 && data.reorderThreshold <= 1000000
+        && data.criticalThreshold is int && data.criticalThreshold >= 0 && data.criticalThreshold <= 1000000
+        && data.severity is string && data.severity.size() <= 16 && data.severity in ['low', 'critical']
+        && data.status is string && data.status.size() <= 24 && data.status in ['active', 'acknowledged', 'resolved']
+        && data.triggeredBy is string && data.triggeredBy.size() >= 2 && data.triggeredBy.size() <= 64
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    // Admins collection is read-only to self; managed server-side only
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && isOwner(uid);
+      allow list, create, update, delete: if false;
+    }
+
+    // Split users collection: public vs private PII
+    match /users/{userId}/public/{docId} {
+      allow get: if isValidId(userId) && isValidId(docId) && docId == 'card' && isSignedIn();
+      allow list: if false;
+      allow create: if isValidId(userId) && isValidId(docId) && docId == 'card'
+        && isVerifiedUser() && isOwner(userId)
+        && isValidPublicProfile(incoming());
+      allow update: if isValidId(userId) && isValidId(docId) && docId == 'card'
+        && isVerifiedUser() && isOwner(userId)
+        && isValidPublicProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'preferredLang', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    match /users/{userId}/private/{docId} {
+      allow get: if isValidId(userId) && isValidId(docId) && docId == 'info' && (isOwner(userId) || isAdmin());
+      allow list: if false;
+      allow create: if isValidId(userId) && isValidId(docId) && docId == 'info'
+        && isVerifiedUser() && isOwner(userId)
+        && isValidPrivateInfo(incoming())
+        && incoming().createdAt == request.time;
+      allow update: if isValidId(userId) && isValidId(docId) && docId == 'info'
+        && isVerifiedUser() && isOwner(userId)
+        && isValidPrivateInfo(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['phone', 'email', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // Isolated patient medical profile records
+    match /patientProfiles/{profileId} {
+      allow get: if isValidProfileId(profileId) && (
+        (isSignedIn() && existing().ownerUid == request.auth.uid) || isAdmin()
+      );
+      allow list: if (isSignedIn() && resource.data.ownerUid == request.auth.uid) || isAdmin();
+      allow create: if isValidProfileId(profileId)
+        && isVerifiedUser()
+        && isValidPatientProfile(incoming())
+        && incoming().profileId == profileId
+        && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid)/private/info);
+      allow update: if isValidProfileId(profileId)
+        && isVerifiedUser()
+        && isValidPatientProfile(incoming())
+        && incoming().profileId == existing().profileId
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().createdAt == existing().createdAt
+        && (
+          isAdmin() ||
+          (existing().ownerUid == request.auth.uid &&
+           incoming().diff(existing()).affectedKeys().hasOnly(['language', 'verificationMode', 'allergies', 'chronicNotes', 'updatedAt']))
+        );
+      allow delete: if false;
+    }
+
+    // Real-time Smart Queue tickets (photo verification, zero QR)
+    match /queueTickets/{ticketId} {
+      allow get: if isValidId(ticketId) && (
+        (isSignedIn() && existing().ownerUid == request.auth.uid) || isAdmin()
+      );
+      allow list: if (isSignedIn() && resource.data.ownerUid == request.auth.uid) || isAdmin();
+      allow create: if isValidId(ticketId)
+        && isVerifiedUser()
+        && isValidQueueTicket(incoming())
+        && incoming().ownerUid == request.auth.uid
+        && incoming().ticketId == ticketId
+        && incoming().status == 'waiting'
+        && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/patientProfiles/$(incoming().profileId))
+        && get(/databases/$(database)/documents/patientProfiles/$(incoming().profileId)).data.ownerUid == request.auth.uid;
+      allow update: if isValidId(ticketId)
+        && isVerifiedUser()
+        && isValidQueueTicket(incoming())
+        && incoming().ticketId == existing().ticketId
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().profileId == existing().profileId
+        && incoming().createdAt == existing().createdAt
+        && (
+          isAdmin() ||
+          (existing().ownerUid == request.auth.uid
+            && !(existing().status in ['completed', 'cancelled'])
+            && incoming().status in ['waiting', 'notified', 'in_room', 'cancelled']
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'roomLocation', 'scheduledTime', 'updatedAt']))
+        );
+      allow delete: if false;
+    }
+
+    // Real-time GPS dispatches (home nurse & medical supplies)
+    match /dispatches/{dispatchId} {
+      allow get: if isValidId(dispatchId) && (
+        (isSignedIn() && existing().ownerUid == request.auth.uid) || isAdmin()
+      );
+      allow list: if (isSignedIn() && resource.data.ownerUid == request.auth.uid) || isAdmin();
+      allow create: if isValidId(dispatchId)
+        && isVerifiedUser()
+        && isValidLiveDispatch(incoming())
+        && incoming().ownerUid == request.auth.uid
+        && incoming().dispatchId == dispatchId
+        && incoming().status == 'dispatched'
+        && incoming().createdAt == request.time;
+      allow update: if isValidId(dispatchId)
+        && isVerifiedUser()
+        && isValidLiveDispatch(incoming())
+        && incoming().dispatchId == existing().dispatchId
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().kind == existing().kind
+        && incoming().createdAt == existing().createdAt
+        && (
+          isAdmin() ||
+          (existing().ownerUid == request.auth.uid
+            && existing().status != 'completed'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['lat', 'lng', 'etaMinutes', 'status', 'updatedAt']))
+        );
+      allow delete: if false;
+    }
+
+    // Real-time Supervisor Complaint Escalations
+    match /escalations/{escalationId} {
+      allow get: if isValidId(escalationId) && (
+        (isSignedIn() && existing().ownerUid == request.auth.uid) || isAdmin()
+      );
+      allow list: if (isSignedIn() && resource.data.ownerUid == request.auth.uid) || isAdmin();
+      allow create: if isValidId(escalationId)
+        && isVerifiedUser()
+        && isValidComplaintEscalation(incoming())
+        && incoming().ownerUid == request.auth.uid
+        && incoming().escalationId == escalationId
+        && incoming().status == 'escalated'
+        && incoming().createdAt == request.time;
+      allow update: if isValidId(escalationId)
+        && isVerifiedUser()
+        && isValidComplaintEscalation(incoming())
+        && incoming().escalationId == existing().escalationId
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().channel == existing().channel
+        && incoming().createdAt == existing().createdAt
+        && isAdmin()
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'summary', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // Critical Supply Threshold Alerts
+    match /supplyAlerts/{alertId} {
+      allow get: if isValidId(alertId) && (
+        (isSignedIn() && existing().ownerUid == request.auth.uid) || isAdmin()
+      );
+      allow list: if (isSignedIn() && resource.data.ownerUid == request.auth.uid) || isAdmin();
+      allow create: if isValidId(alertId)
+        && isVerifiedUser()
+        && isValidSupplyAlert(incoming())
+        && incoming().ownerUid == request.auth.uid
+        && incoming().alertId == alertId
+        && incoming().status == 'active'
+        && incoming().createdAt == request.time;
+      allow update: if isValidId(alertId)
+        && isVerifiedUser()
+        && isValidSupplyAlert(incoming())
+        && incoming().alertId == existing().alertId
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().sku == existing().sku
+        && incoming().createdAt == existing().createdAt
+        && (
+          isAdmin() ||
+          (existing().ownerUid == request.auth.uid
+            && existing().status != 'resolved'
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'stockQty',
+              'reorderThreshold',
+              'criticalThreshold',
+              'severity',
+              'status',
+              'triggeredBy',
+              'updatedAt'
+            ]))
+        );
+      allow delete: if false;
+    }
+  }
+}

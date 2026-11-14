@@ -1,0 +1,416 @@
+{
+  "entities": {
+    "UserPublicProfile": {
+      "title": "UserPublicProfile",
+      "description": "Public display name and preferred interface language for a signed-in user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "preferredLang": {
+          "type": "string",
+          "enum": ["en", "hi", "es", "ta"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "preferredLang", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Strictly private user contact info and unique patient Profile ID.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 32
+        },
+        "uniqueProfileId": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 32,
+          "pattern": "^HC-[A-Z0-9]{6,16}$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "uniqueProfileId", "createdAt", "updatedAt"]
+    },
+    "PatientProfile": {
+      "title": "PatientProfile",
+      "description": "Isolated HIPAA-aligned patient profile linked by unique Profile ID and owner UID.",
+      "type": "object",
+      "properties": {
+        "profileId": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 32,
+          "pattern": "^HC-[A-Z0-9]{6,16}$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "language": {
+          "type": "string",
+          "enum": ["en", "hi", "es", "ta"]
+        },
+        "verificationMode": {
+          "type": "string",
+          "enum": ["otp", "keypad_pin", "unverified"]
+        },
+        "allergies": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "chronicNotes": {
+          "type": "string",
+          "maxLength": 800
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["profileId", "ownerUid", "language", "verificationMode", "createdAt", "updatedAt"]
+    },
+    "QueueTicket": {
+      "title": "QueueTicket",
+      "description": "Photo-verified smart queue ticket with exact appointment room and time (no QR).",
+      "type": "object",
+      "properties": {
+        "ticketId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "profileId": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 32,
+          "pattern": "^HC-[A-Z0-9]{6,16}$"
+        },
+        "clinicName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "roomLocation": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "scheduledTime": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64
+        },
+        "verificationMethod": {
+          "type": "string",
+          "enum": ["photo_match", "keypad_token"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["waiting", "notified", "in_room", "completed", "cancelled"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ticketId",
+        "ownerUid",
+        "profileId",
+        "clinicName",
+        "roomLocation",
+        "scheduledTime",
+        "verificationMethod",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "LiveDispatch": {
+      "title": "LiveDispatch",
+      "description": "Real-time GPS tracking state for home nurse visits and medical supply deliveries.",
+      "type": "object",
+      "properties": {
+        "dispatchId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["nurse_visit", "supply_order"]
+        },
+        "assigneeName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "etaMinutes": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["dispatched", "en_route", "arrived", "completed"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "dispatchId",
+        "ownerUid",
+        "kind",
+        "assigneeName",
+        "lat",
+        "lng",
+        "etaMinutes",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ComplaintEscalation": {
+      "title": "ComplaintEscalation",
+      "description": "Auto-routed complaint escalated to clinical or supply-chain supervisors.",
+      "type": "object",
+      "properties": {
+        "escalationId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "channel": {
+          "type": "string",
+          "enum": ["sms", "ivr", "web"]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 500
+        },
+        "status": {
+          "type": "string",
+          "enum": ["escalated", "acknowledged", "resolved"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "escalationId",
+        "ownerUid",
+        "channel",
+        "summary",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SupplyAlert": {
+      "title": "SupplyAlert",
+      "description": "Database threshold alert triggered when critical medical supplies fall below defined stock thresholds.",
+      "type": "object",
+      "properties": {
+        "alertId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "sku": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32
+        },
+        "productName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 140
+        },
+        "supplierName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "stockQty": {
+          "type": "integer"
+        },
+        "reorderThreshold": {
+          "type": "integer"
+        },
+        "criticalThreshold": {
+          "type": "integer"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["low", "critical"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "acknowledged", "resolved"]
+        },
+        "triggeredBy": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "alertId",
+        "ownerUid",
+        "sku",
+        "productName",
+        "supplierName",
+        "stockQty",
+        "reorderThreshold",
+        "criticalThreshold",
+        "severity",
+        "status",
+        "triggeredBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Server-provisioned supervisor/admin membership document.",
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["supervisor", "admin"]
+        }
+      },
+      "required": ["role"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/public/{docId}": {
+      "schema": { "$ref": "#/entities/UserPublicProfile" },
+      "description": "Public display preferences for a user."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Private PII (email, phone, uniqueProfileId) strictly readable/writable only by the owning user."
+    },
+    "/patientProfiles/{profileId}": {
+      "schema": { "$ref": "#/entities/PatientProfile" },
+      "description": "Medical preferences and verification state strictly isolated to ownerUid."
+    },
+    "/queueTickets/{ticketId}": {
+      "schema": { "$ref": "#/entities/QueueTicket" },
+      "description": "Photo-verified smart queue tickets synced in real time across devices."
+    },
+    "/dispatches/{dispatchId}": {
+      "schema": { "$ref": "#/entities/LiveDispatch" },
+      "description": "Home nurse and supply delivery live GPS tracking records."
+    },
+    "/escalations/{escalationId}": {
+      "schema": { "$ref": "#/entities/ComplaintEscalation" },
+      "description": "Supervisor complaint escalations triggered from web, SMS, or IVR."
+    },
+    "/supplyAlerts/{alertId}": {
+      "schema": { "$ref": "#/entities/SupplyAlert" },
+      "description": "Threshold breach alerts for critical medical supplies synchronized in real time to staff dashboards."
+    },
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Administrative privilege marker documents (read-only to owner)."
+    }
+  }
+}

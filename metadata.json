@@ -1,0 +1,12 @@
+{
+  "name": "CareGrid Health & Supply OS",
+  "description": "End-to-end clinical communication, home nurse dispatch, medical supply chain analytics, photo smart queue, and multilingual SMS/IVR platform.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

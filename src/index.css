@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+    --font-sans: 'DM Sans', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-color: #f8fafc;
+    color: #0f172a;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+/* Custom utility classes for clean surgical SaaS hierarchy */
+.cg-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.cg-btn-primary {
+  background-color: #0f766e;
+  color: #ffffff;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.cg-btn-primary:hover {
+  background-color: #115e59;
+}
+
+.cg-btn-primary:active {
+  transform: translateY(1px);
+}
+
+.cg-btn-secondary {
+  background-color: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.cg-btn-secondary:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.cg-input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #0f172a;
+  background-color: #ffffff;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cg-input:focus {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+/* Feature-phone keypad chassis */
+.keypad-shell {
+  background: linear-gradient(165deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #334155;
+  border-radius: 26px;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.22);
+}
+
+.keypad-lcd {
+  background-color: #d9f99d;
+  color: #14532d;
+  border: 3px solid #334155;
+  border-radius: 10px;
+  font-family: var(--font-mono);
+}
+
+.keypad-key {
+  background-color: #334155;
+  color: #f8fafc;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  font-family: var(--font-display);
+  transition: background-color 0.1s ease, transform 0.08s ease;
+}
+
+.keypad-key:hover {
+  background-color: #475569;
+}
+
+.keypad-key:active {
+  transform: scale(0.96);
+  background-color: #0f766e;
+}
+
+/* Override XR Blocks fullscreen container when mounted inside Spatial tab */
+#xr-viewport-host canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 12px;
+}
